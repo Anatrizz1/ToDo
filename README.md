@@ -6,9 +6,15 @@
   <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black" alt="JavaScript">
 </p>
 
+## Demonstração
+
+Você pode acessar e testar o projeto clicando no link abaixo:  
+👉 [**To Do List - Acesse aqui**](https://ana-beatriz-to-do.netlify.app)
+
 ## Descrição do Projeto
 
-Este é um projeto de "To Do List" focado em design minimalista e uma experiência de usuário elegante. O objetivo foi criar uma aplicação web simples e funcional, demonstrando habilidades em manipulação de DOM, estilização moderna e armazenamento de dados no navegador.
+Este é um projeto de **To Do List** focado em design minimalista e uma experiência de usuário elegante.  
+O objetivo foi criar uma aplicação web simples e funcional, demonstrando habilidades em manipulação de DOM, estilização moderna e armazenamento de dados no navegador.
 
 ## Funcionalidades
 
@@ -19,22 +25,20 @@ Este é um projeto de "To Do List" focado em design minimalista e uma experiênc
 - **Animações e Design**:
   - **Animação de Digitação**: O título "To Do List" é animado para parecer que está sendo digitado, com um cursor piscando que permanece ao final.
   - **Animação de Exclusão**: As tarefas são excluídas com um efeito suave de deslizar para fora da tela.
-  - **Design Minimalista**: O projeto segue uma estética limpa, com uma paleta de cores escura e quente, cantos arredondados e ícones personalizados (SVG).
+  - **Design Minimalista**: Estética limpa, com paleta escura e quente, cantos arredondados e ícones SVG personalizados.
 
 ## Tecnologias Utilizadas
 
-- **HTML5**: Estrutura e semântica da página.
+- **HTML5** → Estrutura e semântica da página.  
 - **CSS3**:
-  - **Flexbox**: Para layouts flexíveis e alinhamento dos elementos.
-  - **@keyframes**: Para criar as animações de digitação e exclusão.
-  - **Propriedades Customizadas**: Para facilitar a manutenção e organização do código.
+  - Flexbox para layouts flexíveis e alinhamento dos elementos.  
+  - @keyframes para criar as animações de digitação e exclusão.  
+  - Propriedades customizadas para facilitar a manutenção e organização do código.  
 - **JavaScript**:
-  - **Manipulação de DOM**: Adição, remoção e alteração de elementos da lista.
-  - **Event Listeners**: Para capturar a interação do usuário.
-  - **Local Storage**: Para salvar e carregar as tarefas do navegador.
+  - Manipulação de DOM (adição, remoção e alteração de elementos da lista).  
+  - Event Listeners para capturar a interação do usuário.  
+  - Local Storage para salvar e carregar as tarefas do navegador.  
 
+## Autor
 
-##  Autor
-
-Feito por **[Ana Beatriz Cerqueira]**
-
+Feito por **Ana Beatriz Cerqueira**
