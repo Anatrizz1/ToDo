@@ -290,3 +290,57 @@ footer p {
 body {
     padding-bottom: 60px; /* Ajuste este valor se o rodapé for mais alto */
 }
+
+@media (max-width: 650px) {
+    /* Ajuste para o corpo e contêiner principal */
+    body {
+        padding: 0 10px; /* Reduz o padding lateral */
+    }
+
+    main {
+        padding: 20px; /* Reduz o padding interno do contêiner principal */
+        max-width: 95%; /* Garante que ocupe quase toda a largura */
+    }
+
+    /* Reduz o tamanho do título principal e o espaçamento */
+    main .title-container h1 {
+        font-size: 3.5em; /* Diminui o título */
+    }
+    
+    /* Reduz o tamanho do cursor para acompanhar o título */
+    main .title-container h1::after {
+        width: .1em;
+    }
+    
+    /* Reduz a margem do cabeçalho */
+    header {
+        margin-bottom: 20px;
+    }
+
+    /* Ajuste para a pílula de tarefa */
+    .task-item {
+        padding: 8px 10px;
+        border-radius: 20px;
+    }
+    
+    /* Ajuste para o checkbox */
+    .task-item label {
+        padding-left: 25px;
+    }
+
+    .task-item label::before {
+        width: 16px;
+        height: 16px;
+    }
+
+    .task-item input[type="checkbox"]:checked + label::after {
+        font-size: 12px;
+        left: 4px;
+    }
+    
+    /* Ajuste para o ícone de lixeira (SVG) */
+    .task-item button svg {
+        width: 18px;
+        height: 18px;
+    }
+}
