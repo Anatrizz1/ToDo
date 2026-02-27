@@ -26,7 +26,7 @@ header {
 }
 
 /* Contêiner para centralizar o título */
-main .title-container {
+.header-title {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -34,7 +34,7 @@ main .title-container {
 }
 
 /* O H1 tem a animação de digitação, sem o cursor */
-main .title-container h1 {
+.header-title__title {
     color: #ffffff;
     font-size: 5em;
     font-weight: 400; 
@@ -48,7 +48,7 @@ main .title-container h1 {
 }
 
 /* Pseudo-elemento que cria o cursor piscando */
-main .title-container h1::after {
+.header-title__title::after {
     content: '';
     display: inline-block;
     vertical-align: top;
@@ -59,7 +59,7 @@ main .title-container h1::after {
 }
 
 /* Estilo para a descrição da página */
-main .title-container p {
+.header-title__description {
     font-size: 15px;
     color: #94a3b8;
     margin: 0;
@@ -303,12 +303,12 @@ body {
     }
 
     /* Reduz o tamanho do título principal e o espaçamento */
-    main .title-container h1 {
+    .header-title__title {
         font-size: 3.5em; /* Diminui o título */
     }
     
     /* Reduz o tamanho do cursor para acompanhar o título */
-    main .title-container h1::after {
+    main .header-title__title::after {
         width: .1em;
     }
     
