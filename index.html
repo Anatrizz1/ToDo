@@ -15,9 +15,14 @@
             <h1 class = "header-title__title">To Do List</h1>  
             <p class="header-title__description">Organize suas tarefas de forma simples e eficiente</p>
         </div>
-        <div id="taskInputContainer">
+        <div id="taskInputContainer" class="main-input__task">
             <input type="text" id="taskInput" placeholder="Digite uma nova tarefa" aria-label="Digite o nome da nova tarefa">
             <button id="addTaskButton">Adicionar Tarefa</button>
+        </div>
+        <div class="filters" id="filters">
+            <button class="filters__button active" data-filter="all">Todas</button>
+            <button class="filters__button" data-filter="active">Pendentes</button>
+            <button class="filters__button" data-filter="completed">Concluídas</button>
         </div>
         <ul id="taskList">
         </ul>

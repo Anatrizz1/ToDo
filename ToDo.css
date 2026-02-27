@@ -243,6 +243,36 @@ main {
     stroke: #ef4444;
 }
 
+.filters__container {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.filters__button {
+    background-color: transparent;
+    color: #94a3b8;
+    border: 2px solid #94a3b8;
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+.filters__button:hover {
+    background-color: #94a3b8;
+    color: #1a2e45;
+    border-color: #94a3b8;
+}
+
+.filters__button.active {
+    background-color: #38a169;
+    color: #fff;
+    border-color: #38a169;
+}
+
 /* ===================================
    Animação para Exclusão de Tarefas
    ===================================
