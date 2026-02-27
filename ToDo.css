@@ -162,6 +162,11 @@ main {
     background-color: #1f344e;
 }
 
+.task-item.completed label::before {
+    background-color: #38a169;
+    border-color: #38a169;
+}
+
 /* Esconde o checkbox padrão */
 .task-item input[type="checkbox"] {
     opacity: 0;
