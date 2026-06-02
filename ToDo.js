@@ -1,16 +1,22 @@
+// ==========================================
+// CONFIGURAÇÃO DO BANCO (SUPABASE)
+// ==========================================
+// Chave pública e URL do meu projeto. Como é o front-end, uso a anon key.
 const SUPABASE_URL = "https://iifxubtzifbqupsaczam.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_-qhs5DK1r2XbWE1rt1yiqg_7dVX-eYS";
 
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ==========================================
-// 1. ELEMENTOS DA TELA
+// MAPEAMENTO DO DOM 
 // ==========================================
+// Elementos da To-Do List
 const taskInput = document.getElementById('taskInput');
 const addTaskButton = document.getElementById('addTaskButton');
 const taskList = document.getElementById('taskList');
 const filters = document.querySelectorAll('.filters__button');
 
+// Elementos de Autenticação e Layout
 const authContainer = document.getElementById('authContainer');
 const todoAppContainer = document.getElementById('todoAppContainer');
 const emailInput = document.getElementById('emailInput');
@@ -21,28 +27,36 @@ const logoutButton = document.getElementById('logoutButton');
 const authMessage = document.getElementById('authMessage');
 const userGreeting = document.getElementById('userGreeting');
 const mainContainer = document.getElementById('mainContainer');
+
+// Estado global do meu app
 let tasks = [];
 let currentFilter = 'all';
 let sessionUser = null;
 
+// ==========================================
+// MONITOR DE SESSÃO E MUDANÇA DE LAYOUT
+// ==========================================
+// Fica escutando se o usuário logou ou deslogou para trocar a tela
 db.auth.onAuthStateChange((event, session) => {
     if (session) {
         sessionUser = session.user;
         
-        // --- ADICIONE ESTAS DUAS LINHAS ---
+        // Troca do modo "Split Screen" para o modo "App Centralizado"
         mainContainer.classList.remove('login-layout');
         mainContainer.classList.add('app-layout');
         
         authContainer.style.display = 'none';
         todoAppContainer.style.display = 'block';
         userGreeting.innerText = `Logado como: ${sessionUser.email}`;
+        
+        // Puxa as tarefas exclusivas desse usuário assim que ele loga
         loadTasks(); 
     } else {
         sessionUser = null;
-        tasks = []; 
+        tasks = []; // Limpo o estado da tela por segurança
         renderTasks();
         
-        // --- ADICIONE ESTAS DUAS LINHAS ---
+        // Volta para o modo "Split Screen" da tela de login
         mainContainer.classList.remove('app-layout');
         mainContainer.classList.add('login-layout');
         
@@ -52,29 +66,15 @@ db.auth.onAuthStateChange((event, session) => {
 });
 
 // ==========================================
-// 2. MONITOR DE SESSÃO E LOGIN
+//  FUNÇÕES DE AUTENTICAÇÃO
 // ==========================================
-db.auth.onAuthStateChange((event, session) => {
-    if (session) {
-        sessionUser = session.user;
-        authContainer.style.display = 'none';
-        todoAppContainer.style.display = 'block';
-        userGreeting.innerText = `Logado como: ${sessionUser.email}`;
-        loadTasks(); // Puxa as tarefas quando loga
-    } else {
-        sessionUser = null;
-        tasks = []; // Limpa a lista da tela
-        renderTasks();
-        authContainer.style.display = 'block';
-        todoAppContainer.style.display = 'none';
-    }
-});
-
 registerButton.addEventListener('click', async () => {
     const email = emailInput.value;
     const password = passwordInput.value;
     authMessage.innerText = 'Criando conta...';
+    
     const { error } = await db.auth.signUp({ email, password });
+    
     if (error) authMessage.innerText = `Erro: ${error.message}`;
     else authMessage.innerText = 'Conta criada com sucesso! Pode entrar.';
 });
@@ -83,7 +83,9 @@ loginButton.addEventListener('click', async () => {
     const email = emailInput.value;
     const password = passwordInput.value;
     authMessage.innerText = 'Entrando...';
+    
     const { error } = await db.auth.signInWithPassword({ email, password });
+    
     if (error) authMessage.innerText = 'Login falhou. Verifique os dados.';
     else authMessage.innerText = '';
 });
@@ -93,15 +95,18 @@ logoutButton.addEventListener('click', async () => {
 });
 
 // ==========================================
-// 3. COMUNICAÇÃO COM O BANCO DE DADOS
+//  CRUD COM O BANCO DE DADOS (SUPABASE)
 // ==========================================
+
+// READ: Busca as tarefas cadastradas no banco
 async function loadTasks() {
-    if (!sessionUser) return;
+    if (!sessionUser) return; // Trava de segurança: só busca se tiver logado
+    
     const { data, error } = await db
         .from('todos')
         .select('*')
-        .eq('user_id', sessionUser.id)
-        .order('created_at', { ascending: true });
+        .eq('user_id', sessionUser.id) // Filtra pelo ID do usuário atual
+        .order('created_at', { ascending: true }); // Mais antigas primeiro
 
     if (error) {
         console.error('Erro ao buscar tarefas:', error.message);
@@ -111,8 +116,10 @@ async function loadTasks() {
     renderTasks();
 }
 
+// RENDER: Atualiza a lista na tela com base nos filtros
 function renderTasks() {
     taskList.innerHTML = ''; 
+    
     const filteredTasks = tasks.filter(task => {
         if (currentFilter === 'active') return !task.is_completed;
         if (currentFilter === 'completed') return task.is_completed;
@@ -124,6 +131,7 @@ function renderTasks() {
         li.classList.add('task-item');
         if (task.is_completed) li.classList.add('completed');
         
+        // Estrutura da "pílula" da tarefa usando SVG inline para a lixeira
         li.innerHTML = `
             <label>
                 <input type="checkbox" ${task.is_completed ? 'checked' : ''} data-id="${task.id}">
@@ -142,10 +150,12 @@ function renderTasks() {
     });
 }
 
+// CREATE: Salva uma nova tarefa
 async function addTask() {
     const title = taskInput.value.trim();
     if (title !== '' && sessionUser) {
-        taskInput.value = ''; 
+        taskInput.value = ''; // UX: limpa o input na hora para o usuário não esperar
+        
         const { data, error } = await db
             .from('todos')
             .insert([{ title: title, is_completed: false, user_id: sessionUser.id }])
@@ -155,11 +165,14 @@ async function addTask() {
             console.error('Erro ao salvar no banco:', error.message);
             return;
         }
+        
+        // Pego o retorno do banco (que já vem com o ID oficial gerado) e coloco na tela
         tasks.push(data[0]);
         renderTasks();
     }
 }
 
+// UPDATE: Marca ou desmarca a tarefa como concluída
 async function toggleTask(event) {
     if (event.target.closest('label')) {
         const input = event.target.closest('label').querySelector('input');
@@ -168,9 +181,12 @@ async function toggleTask(event) {
 
         if (indexReal !== -1) {
             const novoStatus = !tasks[indexReal].is_completed;
+            
+            // Optimistic UI: atualizo a tela na mesma hora para parecer rápido
             tasks[indexReal].is_completed = novoStatus;
-            renderTasks(); // Atualiza na tela rápido
+            renderTasks(); 
 
+            // Depois mando a requisição pro banco atualizar a coluna is_completed
             const { error } = await db
                 .from('todos')
                 .update({ is_completed: novoStatus })
@@ -178,13 +194,15 @@ async function toggleTask(event) {
 
             if (error) {
                 console.error('Erro ao atualizar no banco:', error.message);
-                tasks[indexReal].is_completed = !novoStatus; // Desfaz se der erro
+                // Se der erro no banco, eu desfaço a alteração visual
+                tasks[indexReal].is_completed = !novoStatus; 
                 renderTasks();
             }
         }
     }
 }
 
+// DELETE: Exclui a tarefa do banco e da tela
 async function deleteTask(event) {
     if (event.target.closest('.delete-button')) {
         const button = event.target.closest('.delete-button');
@@ -193,7 +211,7 @@ async function deleteTask(event) {
         const indexReal = tasks.findIndex(task => String(task.id) === String(taskId));
 
         if (indexReal !== -1) {
-            li.classList.add('slide-out'); // Faz a animação
+            li.classList.add('slide-out'); // Aciono a animação CSS antes de excluir
             
             const { error } = await db
                 .from('todos')
@@ -206,6 +224,7 @@ async function deleteTask(event) {
                 return;
             }
 
+            // Só tiro do DOM e do Array depois que a animação de slide-out terminar (400ms)
             setTimeout(() => {
                 tasks.splice(indexReal, 1);
                 renderTasks();
@@ -215,8 +234,9 @@ async function deleteTask(event) {
 }
 
 // ==========================================
-// 4. EVENTOS DE CLIQUE E TECLADO
+// 5. EVENT LISTENERS
 // ==========================================
+// Controle de botões de filtro (Todas, Pendentes, Concluídas)
 filters.forEach(button => {
     button.addEventListener('click', () => {
         filters.forEach(b => b.classList.remove('active'));
@@ -226,9 +246,11 @@ filters.forEach(button => {
     });
 });
 
+// Delegação de eventos na lista para performance (pegando cliques no check e na lixeira)
 taskList.addEventListener('click', toggleTask);
 taskList.addEventListener('click', deleteTask);
 
+// Acionando a criação de tarefa pelo botão e pela tecla Enter
 addTaskButton.addEventListener('click', addTask);
 taskInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
