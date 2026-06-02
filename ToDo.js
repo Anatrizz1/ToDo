@@ -3,54 +3,127 @@ const SUPABASE_ANON_KEY = "sb_publishable_-qhs5DK1r2XbWE1rt1yiqg_7dVX-eYS";
 
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// ==========================================
+// 1. ELEMENTOS DA TELA
+// ==========================================
 const taskInput = document.getElementById('taskInput');
 const addTaskButton = document.getElementById('addTaskButton');
 const taskList = document.getElementById('taskList');
 const filters = document.querySelectorAll('.filters__button');
 
-// A lista começa vazia
+const authContainer = document.getElementById('authContainer');
+const todoAppContainer = document.getElementById('todoAppContainer');
+const emailInput = document.getElementById('emailInput');
+const passwordInput = document.getElementById('passwordInput');
+const loginButton = document.getElementById('loginButton');
+const registerButton = document.getElementById('registerButton');
+const logoutButton = document.getElementById('logoutButton');
+const authMessage = document.getElementById('authMessage');
+const userGreeting = document.getElementById('userGreeting');
+const mainContainer = document.getElementById('mainContainer');
 let tasks = [];
 let currentFilter = 'all';
+let sessionUser = null;
 
-// BUSCAR TAREFAS 
+db.auth.onAuthStateChange((event, session) => {
+    if (session) {
+        sessionUser = session.user;
+        
+        // --- ADICIONE ESTAS DUAS LINHAS ---
+        mainContainer.classList.remove('login-layout');
+        mainContainer.classList.add('app-layout');
+        
+        authContainer.style.display = 'none';
+        todoAppContainer.style.display = 'block';
+        userGreeting.innerText = `Logado como: ${sessionUser.email}`;
+        loadTasks(); 
+    } else {
+        sessionUser = null;
+        tasks = []; 
+        renderTasks();
+        
+        // --- ADICIONE ESTAS DUAS LINHAS ---
+        mainContainer.classList.remove('app-layout');
+        mainContainer.classList.add('login-layout');
+        
+        authContainer.style.display = 'block';
+        todoAppContainer.style.display = 'none';
+    }
+});
 
+// ==========================================
+// 2. MONITOR DE SESSÃO E LOGIN
+// ==========================================
+db.auth.onAuthStateChange((event, session) => {
+    if (session) {
+        sessionUser = session.user;
+        authContainer.style.display = 'none';
+        todoAppContainer.style.display = 'block';
+        userGreeting.innerText = `Logado como: ${sessionUser.email}`;
+        loadTasks(); // Puxa as tarefas quando loga
+    } else {
+        sessionUser = null;
+        tasks = []; // Limpa a lista da tela
+        renderTasks();
+        authContainer.style.display = 'block';
+        todoAppContainer.style.display = 'none';
+    }
+});
+
+registerButton.addEventListener('click', async () => {
+    const email = emailInput.value;
+    const password = passwordInput.value;
+    authMessage.innerText = 'Criando conta...';
+    const { error } = await db.auth.signUp({ email, password });
+    if (error) authMessage.innerText = `Erro: ${error.message}`;
+    else authMessage.innerText = 'Conta criada com sucesso! Pode entrar.';
+});
+
+loginButton.addEventListener('click', async () => {
+    const email = emailInput.value;
+    const password = passwordInput.value;
+    authMessage.innerText = 'Entrando...';
+    const { error } = await db.auth.signInWithPassword({ email, password });
+    if (error) authMessage.innerText = 'Login falhou. Verifique os dados.';
+    else authMessage.innerText = '';
+});
+
+logoutButton.addEventListener('click', async () => {
+    await db.auth.signOut();
+});
+
+// ==========================================
+// 3. COMUNICAÇÃO COM O BANCO DE DADOS
+// ==========================================
 async function loadTasks() {
+    if (!sessionUser) return;
     const { data, error } = await db
         .from('todos')
         .select('*')
-        .order('created_at', { ascending: true }); // Ordena da mais antiga para a mais nova
+        .eq('user_id', sessionUser.id)
+        .order('created_at', { ascending: true });
 
     if (error) {
         console.error('Erro ao buscar tarefas:', error.message);
         return;
     }
-
-    tasks = data; // Coloca os dados do banco na nossa variável
+    tasks = data;
     renderTasks();
 }
 
-
-// RENDERIZAR NA TELA
 function renderTasks() {
     taskList.innerHTML = ''; 
-
     const filteredTasks = tasks.filter(task => {
-        // Agora usamos 'is_completed' em vez de 'completed' para bater com o banco
-        if (currentFilter === 'active') {
-            return !task.is_completed;
-        } else if (currentFilter === 'completed') {
-            return task.is_completed;
-        }
+        if (currentFilter === 'active') return !task.is_completed;
+        if (currentFilter === 'completed') return task.is_completed;
         return true;
     });
 
     filteredTasks.forEach((task) => {
         const li = document.createElement('li');
         li.classList.add('task-item');
-        if (task.is_completed) {
-            li.classList.add('completed');
-        }
-        // Agora usamos 'task.title' em vez de 'task.text'
+        if (task.is_completed) li.classList.add('completed');
+        
         li.innerHTML = `
             <label>
                 <input type="checkbox" ${task.is_completed ? 'checked' : ''} data-id="${task.id}">
@@ -69,31 +142,24 @@ function renderTasks() {
     });
 }
 
-// 3. ADICIONAR TAREFA (CREATE)
-
 async function addTask() {
     const title = taskInput.value.trim();
-    if (title !== '') {
-        taskInput.value = ''; // Limpa o input rápido para boa UX
-
-        // Insere a tarefa no banco e pede os dados de volta (.select)
+    if (title !== '' && sessionUser) {
+        taskInput.value = ''; 
         const { data, error } = await db
             .from('todos')
-            .insert([{ title: title, is_completed: false }])
+            .insert([{ title: title, is_completed: false, user_id: sessionUser.id }])
             .select();
 
         if (error) {
             console.error('Erro ao salvar no banco:', error.message);
             return;
         }
-
-        // Adiciona a tarefa (com o ID gerado pelo banco) na lista e renderiza
         tasks.push(data[0]);
         renderTasks();
     }
 }
 
-// MARCAR COMO CONCLUÍDO (UPDATE)
 async function toggleTask(event) {
     if (event.target.closest('label')) {
         const input = event.target.closest('label').querySelector('input');
@@ -101,30 +167,24 @@ async function toggleTask(event) {
         const indexReal = tasks.findIndex(task => String(task.id) === String(taskId));
 
         if (indexReal !== -1) {
-            // Inverte o valor
             const novoStatus = !tasks[indexReal].is_completed;
-            
-            // Atualiza na tela primeiro para ficar mais rápido pro usuário
             tasks[indexReal].is_completed = novoStatus;
-            renderTasks();
+            renderTasks(); // Atualiza na tela rápido
 
-            // Atualiza no banco de dados
             const { error } = await db
                 .from('todos')
                 .update({ is_completed: novoStatus })
                 .eq('id', taskId);
 
             if (error) {
-                console.error('Erro ao atualizar status:', error.message);
-                // Se der erro no banco, desfazemos a ação na tela
-                tasks[indexReal].is_completed = !novoStatus;
+                console.error('Erro ao atualizar no banco:', error.message);
+                tasks[indexReal].is_completed = !novoStatus; // Desfaz se der erro
                 renderTasks();
             }
         }
     }
 }
 
-// DELETAR TAREFA (DELETE)
 async function deleteTask(event) {
     if (event.target.closest('.delete-button')) {
         const button = event.target.closest('.delete-button');
@@ -133,16 +193,15 @@ async function deleteTask(event) {
         const indexReal = tasks.findIndex(task => String(task.id) === String(taskId));
 
         if (indexReal !== -1) {
-            li.classList.add('slide-out');
-
-            // Deleta do banco de dados
+            li.classList.add('slide-out'); // Faz a animação
+            
             const { error } = await db
                 .from('todos')
                 .delete()
                 .eq('id', taskId);
 
             if (error) {
-                console.error('Erro ao deletar do banco:', error.message);
+                console.error('Erro ao deletar no banco:', error.message);
                 li.classList.remove('slide-out');
                 return;
             }
@@ -155,7 +214,9 @@ async function deleteTask(event) {
     }
 }
 
-// CONFIGURAÇÃO DOS FILTROS E EVENTOS
+// ==========================================
+// 4. EVENTOS DE CLIQUE E TECLADO
+// ==========================================
 filters.forEach(button => {
     button.addEventListener('click', () => {
         filters.forEach(b => b.classList.remove('active'));
@@ -164,8 +225,6 @@ filters.forEach(button => {
         renderTasks();  
     });
 });
-
-document.addEventListener('DOMContentLoaded', loadTasks);
 
 taskList.addEventListener('click', toggleTask);
 taskList.addEventListener('click', deleteTask);

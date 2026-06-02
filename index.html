@@ -8,29 +8,55 @@
     <link rel="icon" href="imagem/favicon.ico" type="image/x-icon">
 </head>
 <body>
-    <header>
-    </header>
-    <main>
+    <header></header>
+    
+    <main id="mainContainer" class="login-layout">
         <div class="header-title">
-            <h1 class = "header-title__title">To Do List</h1>  
+            <h1 class="header-title__title">To Do List</h1>  
             <p class="header-title__description">Organize suas tarefas de forma simples e eficiente</p>
         </div>
-        <div id="taskInputContainer" class="main-input__task">
-            <input type="text" id="taskInput" placeholder="Digite uma nova tarefa" aria-label="Digite o nome da nova tarefa">
-            <button id="addTaskButton">Adicionar Tarefa</button>
+
+        <div id="authContainer" class="auth-card">
+            <h2 class="auth-title">Acesse a plataforma</h2>
+            <p class="auth-subtitle">Faça login ou registre-se para gerenciar suas tarefas.</p>
+            
+            <input type="email" id="emailInput" class="auth-input" placeholder="Digite seu e-mail" aria-label="E-mail">
+            <input type="password" id="passwordInput" class="auth-input" placeholder="Digite sua senha" aria-label="Senha">
+            
+            <button id="loginButton" class="auth-btn primary-btn">Entrar</button>
+            
+            <div class="auth-footer">
+                Ainda não tem uma conta? <span id="registerButton" class="register-link">Inscreva-se</span>
+            </div>
+            <p id="authMessage" style="color: #fca5a5; font-size: 0.9em; margin-top: 10px;"></p>
         </div>
-        <div class="filters" id="filters">
-            <button class="filters__button active" data-filter="all">Todas</button>
-            <button class="filters__button" data-filter="active">Pendentes</button>
-            <button class="filters__button" data-filter="completed">Concluídas</button>
+
+        <div id="todoAppContainer" style="display: none; width: 100%;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <p id="userGreeting" style="font-size: 0.9em; color: #94a3b8; margin: 0;"></p>
+                <button id="logoutButton" style="background: transparent; color: #fca5a5; border: 1px solid #fca5a5; padding: 5px 10px; border-radius: 5px; cursor: pointer;">Sair</button>
+            </div>
+
+            <div id="taskInputContainer" class="main-input__task">
+                <input type="text" id="taskInput" placeholder="Digite uma nova tarefa" aria-label="Digite o nome da nova tarefa">
+                <button id="addTaskButton">Adicionar Tarefa</button>
+            </div>
+            
+            <div class="filters" id="filters">
+                <button class="filters__button active" data-filter="all">Todas</button>
+                <button class="filters__button" data-filter="active">Pendentes</button>
+                <button class="filters__button" data-filter="completed">Concluídas</button>
+            </div>
+            
+            <ul id="taskList"></ul>
         </div>
-        <ul id="taskList">
-        </ul>
     </main>
+
     <footer>
         <p>&copy; 2025 To Do List. Todos os direitos reservados.</p>
     </footer>
-   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script defer src="ToDo.js"></script>
 </body>
 </html>
