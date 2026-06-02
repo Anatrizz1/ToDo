@@ -1,41 +1,60 @@
+const SUPABASE_URL = "https://iifxubtzifbqupsaczam.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_-qhs5DK1r2XbWE1rt1yiqg_7dVX-eYS";
+
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 const taskInput = document.getElementById('taskInput');
 const addTaskButton = document.getElementById('addTaskButton');
 const taskList = document.getElementById('taskList');
 const filters = document.querySelectorAll('.filters__button');
 
-let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+// A lista começa vazia
+let tasks = [];
 let currentFilter = 'all';
 
-filters.forEach(button => {
-    button.addEventListener('click', () => {
-        filters.forEach(b=> b.classList.remove('active'));
-        button.classList.add('active');
-        currentFilter = button.dataset.filter;
-        renderTasks();  
-    });
-});
+// BUSCAR TAREFAS 
+
+async function loadTasks() {
+    const { data, error } = await db
+        .from('todos')
+        .select('*')
+        .order('created_at', { ascending: true }); // Ordena da mais antiga para a mais nova
+
+    if (error) {
+        console.error('Erro ao buscar tarefas:', error.message);
+        return;
+    }
+
+    tasks = data; // Coloca os dados do banco na nossa variável
+    renderTasks();
+}
+
+
+// RENDERIZAR NA TELA
 function renderTasks() {
     taskList.innerHTML = ''; 
 
     const filteredTasks = tasks.filter(task => {
+        // Agora usamos 'is_completed' em vez de 'completed' para bater com o banco
         if (currentFilter === 'active') {
-            return !task.completed;
+            return !task.is_completed;
         } else if (currentFilter === 'completed') {
-            return task.completed;
+            return task.is_completed;
         }
         return true;
     });
 
-    filteredTasks.forEach((task, index) => {
+    filteredTasks.forEach((task) => {
         const li = document.createElement('li');
         li.classList.add('task-item');
-        if (task.completed) {
+        if (task.is_completed) {
             li.classList.add('completed');
         }
+        // Agora usamos 'task.title' em vez de 'task.text'
         li.innerHTML = `
             <label>
-                <input type="checkbox" ${task.completed ? 'checked' : ''} data-id="${task.id}" data-index="${index}">
-                <span>${task.text}</span>
+                <input type="checkbox" ${task.is_completed ? 'checked' : ''} data-id="${task.id}">
+                <span>${task.title}</span>
             </label>
             <button class="delete-button" data-id="${task.id}" aria-label="Excluir tarefa">
                 <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -50,54 +69,103 @@ function renderTasks() {
     });
 }
 
-function addTask() {
-        const text = taskInput.value.trim();
-        if (text !== '') {
-        const newTask = {
-        id: Date.now(), 
-        text: text,  
-        completed: false 
-    };
-        tasks.push(newTask);
-        taskInput.value = '';
-        saveTasks();
+// 3. ADICIONAR TAREFA (CREATE)
+
+async function addTask() {
+    const title = taskInput.value.trim();
+    if (title !== '') {
+        taskInput.value = ''; // Limpa o input rápido para boa UX
+
+        // Insere a tarefa no banco e pede os dados de volta (.select)
+        const { data, error } = await db
+            .from('todos')
+            .insert([{ title: title, is_completed: false }])
+            .select();
+
+        if (error) {
+            console.error('Erro ao salvar no banco:', error.message);
+            return;
+        }
+
+        // Adiciona a tarefa (com o ID gerado pelo banco) na lista e renderiza
+        tasks.push(data[0]);
         renderTasks();
     }
 }
 
-function toggleTask(event) {
+// MARCAR COMO CONCLUÍDO (UPDATE)
+async function toggleTask(event) {
     if (event.target.closest('label')) {
         const input = event.target.closest('label').querySelector('input');
-        const indexReal = tasks.findIndex(task => task.id === parseInt(input.dataset.id));
+        const taskId = input.dataset.id;
+        const indexReal = tasks.findIndex(task => String(task.id) === String(taskId));
+
         if (indexReal !== -1) {
-        tasks[indexReal].completed = !tasks[indexReal].completed;
-        saveTasks();
-        renderTasks();
+            // Inverte o valor
+            const novoStatus = !tasks[indexReal].is_completed;
+            
+            // Atualiza na tela primeiro para ficar mais rápido pro usuário
+            tasks[indexReal].is_completed = novoStatus;
+            renderTasks();
+
+            // Atualiza no banco de dados
+            const { error } = await db
+                .from('todos')
+                .update({ is_completed: novoStatus })
+                .eq('id', taskId);
+
+            if (error) {
+                console.error('Erro ao atualizar status:', error.message);
+                // Se der erro no banco, desfazemos a ação na tela
+                tasks[indexReal].is_completed = !novoStatus;
+                renderTasks();
+            }
         }
     }
 }
 
-function deleteTask(event) {
+// DELETAR TAREFA (DELETE)
+async function deleteTask(event) {
     if (event.target.closest('.delete-button')) {
         const button = event.target.closest('.delete-button');
         const li = button.closest('li');
-        const indexReal = tasks.findIndex(task => task.id === parseInt(button.dataset.id));
-        li.classList.add('slide-out');
-        setTimeout(() => {
-            tasks.splice(indexReal, 1);
-            saveTasks();
-            renderTasks();
-        }, 400); 
+        const taskId = button.dataset.id;
+        const indexReal = tasks.findIndex(task => String(task.id) === String(taskId));
+
+        if (indexReal !== -1) {
+            li.classList.add('slide-out');
+
+            // Deleta do banco de dados
+            const { error } = await db
+                .from('todos')
+                .delete()
+                .eq('id', taskId);
+
+            if (error) {
+                console.error('Erro ao deletar do banco:', error.message);
+                li.classList.remove('slide-out');
+                return;
+            }
+
+            setTimeout(() => {
+                tasks.splice(indexReal, 1);
+                renderTasks();
+            }, 400); 
+        }
     }
 }
 
-// Função para salvar as tarefas no localStorage
-function saveTasks() {
-    localStorage.setItem('tasks', JSON.stringify(tasks));
-}
+// CONFIGURAÇÃO DOS FILTROS E EVENTOS
+filters.forEach(button => {
+    button.addEventListener('click', () => {
+        filters.forEach(b => b.classList.remove('active'));
+        button.classList.add('active');
+        currentFilter = button.dataset.filter;
+        renderTasks();  
+    });
+});
 
-// Adicionando os Event Listeners
-document.addEventListener('DOMContentLoaded', renderTasks);
+document.addEventListener('DOMContentLoaded', loadTasks);
 
 taskList.addEventListener('click', toggleTask);
 taskList.addEventListener('click', deleteTask);
